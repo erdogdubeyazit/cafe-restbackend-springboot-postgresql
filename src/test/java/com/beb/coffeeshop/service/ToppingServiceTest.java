@@ -1,0 +1,104 @@
+package com.beb.coffeeshop.service;
+
+import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+
+import com.beb.coffeeshop.exception.ServiceException;
+import com.beb.coffeeshop.model.Currency;
+import com.beb.coffeeshop.model.Topping;
+import com.beb.coffeeshop.repository.ToppingRepository;
+import com.beb.coffeeshop.service.impl.ToppingServiceImpl;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(loader = AnnotationConfigContextLoader.class)
+@ActiveProfiles("test")
+public class ToppingServiceTest {
+
+    private ToppingService toppingService;
+
+    @Mock
+    private ToppingRepository toppingRepositoryMock;
+
+    @Before
+    public void setUp() {
+        toppingService = new ToppingServiceImpl(toppingRepositoryMock);
+    }
+
+    @Test
+    public void testGetAllWithoutPaging() {
+        toppingService.getAll();
+        verify(toppingRepositoryMock, times(1)).findAll();
+    }
+
+    @Test
+    public void getAll_with_some_missing_paramters_shoul_fail() {
+        assertThrows(Exception.class, () -> toppingService.getAll(null, 0, ""));
+        assertThrows(Exception.class, () -> toppingService.getAll(0, null, ""));
+        assertThrows(Exception.class, () -> toppingService.getAll(0, 0, null));
+    }
+
+    @Test
+    public void save_with_missing_parameters_should_fail() {
+        assertThrows(Exception.class, () -> toppingService.save(null, "name", BigDecimal.ZERO, "Currency.EUR"));
+        assertThrows(Exception.class, () -> toppingService.save(null, null, BigDecimal.ZERO, "Currency.EUR"));
+        assertThrows(Exception.class, () -> toppingService.save(null, null, null, "Currency.EUR"));
+        assertThrows(Exception.class, () -> toppingService.save(null, null, null, null));
+    }
+
+    @Test(expected = ServiceException.class)
+    public void save_with_incompatible_currency_should_fail() throws ServiceException {
+
+        when(toppingRepositoryMock.findById(anyLong())).thenReturn(Optional.of(new Topping()));
+
+        try {
+            toppingService.save(0l, "name", BigDecimal.ZERO, "-");
+        } catch (ServiceException e) {
+            assertEquals("Incompatible currentcy type", e.getMessage());
+            throw e;
+        }
+
+        fail("Service Exception with the message `Incompatible currentcy type` was not thrown");
+    }
+
+    @Test
+    public void testSave() {
+        when(toppingRepositoryMock.findById(anyLong())).thenReturn(Optional.of(new Topping()));
+        when(toppingRepositoryMock.save(any())).thenReturn(new Topping());
+        try {
+            toppingService.save(0l, "name", BigDecimal.ZERO, Currency.EUR.name());
+            verify(toppingRepositoryMock, times(1)).save(any());
+        } catch (ServiceException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void delete_with_missing_id_should_fail() {
+        assertThrows(Exception.class, () -> toppingService.delete(null));
+
+    }
+
+    @Test()
+    public void testDelete() throws ServiceException {
+        toppingService.delete(-1l);
+        verify(toppingRepositoryMock, times(1)).deleteById(anyLong());
+    }
+}
