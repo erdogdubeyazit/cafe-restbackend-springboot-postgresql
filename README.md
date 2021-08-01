@@ -1,6 +1,6 @@
 # Cafe Shop Backend
 
-A spring boat rest backend demo application.
+A spring boot rest backend demo application.
 
 ## Installation
 Application starts with default admin credentials. 
