@@ -13,7 +13,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * Generates data provided in Software Requirements documnet
+ * Generates data provided in Software Requirements document
  * 
  * @see "Backend API Backend Technical Aseesment Document"
  */
